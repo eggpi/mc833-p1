@@ -1,6 +1,6 @@
 CFLAGS = -O2 -Wall -pedantic -std=c99
 
-server: libserver.a main.o
+server: libserver.a client.o commands.o main.o
 	$(CC) $^ -o $@
 
 %.o: %.c
