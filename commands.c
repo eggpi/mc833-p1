@@ -83,6 +83,7 @@ process_commands(client_t *client, const char *request) {
         if (!client_set_position(client, atof(argv[0]), atof(argv[1]))) {
             return strdup("no coverage for your position!");
         }
+        retval = strdup("ack");
     } else if (!strcmp(command, CMD_LIST_ALL_POI)) {
         retval = cmd_list_all_poi();
     } else if (!strcmp(command, CMD_SHOW_POI)) {
