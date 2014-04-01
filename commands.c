@@ -17,20 +17,22 @@
 
 static char *cmd_list_all_poi(void);
 
-static char ** strsplit(const char *str, int len, char sep);
+static char **strsplit(const char *str, int len, char sep, int maxparts);
 static void strlist_free(char **strlist);
 static int make_list_from_cols(void *userdata, int argc, char **argv, char **cols);
 
 static char **
-strsplit(const char *str, int len, char sep) {
+strsplit(const char *str, int len, char sep, int maxparts) {
     int parts = 1;
-    for (int i = 0; i < len; i++) parts += (str[i] == sep);
+    for (int i = 0; i < len && (maxparts < 0 || parts < maxparts); i++) {
+        parts += (str[i] == sep);
+    }
 
     const char *s = str;
     char **ret = calloc(parts + 1, sizeof(char *));
     for (int i = 0; i < parts; i++) {
         const char *end = strchr(s, sep);
-        if (!end) end = str + len - 1;
+        if (!end || i == maxparts - 1) end = str + len;
         ret[i] = strndup(s, end - s);
         s = end + 1;
     }
@@ -52,12 +54,12 @@ strlist_free(char **strlist) {
 
 char *
 process_commands(client_t *client, const char *request, size_t len) {
-    char **request_parts = strsplit(request, len, ' ');
+    char **request_parts = strsplit(request, len, ' ', 2);
     char *command = request_parts[0];
     char *args = request_parts[1];
 
     char **argv = NULL;
-    if (args) argv = strsplit(args, strlen(args), ',');
+    if (args) argv = strsplit(args, strlen(args), ',', -1);
 
     if (!strcmp(command, CMD_POSITION)) {
         if (!client_set_position(client, atof(argv[0]), atof(argv[1]))) {
