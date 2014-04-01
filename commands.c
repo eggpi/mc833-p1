@@ -17,6 +17,7 @@
 
 static char *cmd_list_all_poi(void);
 static char *cmd_show_poi(const char *poi);
+static char *cmd_rate_poi(const char *poi, const char *rating);
 
 static char **strsplit(const char *str, int len, char sep, int maxparts);
 static void strlist_free(char **strlist);
@@ -72,6 +73,9 @@ process_commands(client_t *client, const char *request, size_t len) {
     } else if (!strcmp(command, CMD_SHOW_POI)) {
         if (!argv) retval = strdup("missing argument");
         else retval = cmd_show_poi(argv[0]);
+    } else if (!strcmp(command, CMD_RATE)) {
+        if (!argv || !argv[1]) retval = strdup("missing argument");
+        else retval = cmd_rate_poi(argv[0], argv[1]);
     } else {
         retval = strdup("invalid command");
     }
@@ -119,10 +123,17 @@ make_object_from_cols(void *userdata, int argc, char **argv, char **cols) {
 static char *
 cmd_show_poi(const char *poi) {
     json_t *object = json_object();
-    db_run("select name, latitude, longitude from places where name = %Q",
+    db_run("select * from places where name = %Q",
             make_object_from_cols, object, poi);
 
     char *retval = json_dumps(object, 0);
     json_decref(object);
     return retval;
+}
+
+static char *
+cmd_rate_poi(const char *poi, const char *rating) {
+    db_run("update places set rating = %Q where name = %Q", NULL, NULL, rating,
+            poi);
+    return cmd_show_poi(poi);
 }
