@@ -15,6 +15,7 @@ db_init(void) {
 void
 db_close(void) {
     sqlite3_close(db);
+    db = NULL;
     return;
 }
 
