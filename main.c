@@ -3,6 +3,7 @@
 #include <string.h>
 #include <sys/socket.h>
 
+#include "db.h"
 #include "server.h"
 #include "client.h"
 #include "commands.h"
@@ -11,6 +12,7 @@ static client_t *client;
 
 static void
 on_client_accepted(int fd, const struct sockaddr *peer) {
+    db_init();
     client = client_new();
 }
 
@@ -23,6 +25,7 @@ on_incoming_data(int fd, const char *data, size_t len) {
 
 static void
 on_client_closed(int fd, const struct sockaddr *peer) {
+    db_close();
     client_destroy(client);
     client = NULL;
 }

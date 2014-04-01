@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <assert.h>
 
+#include "db.h"
 #include "commands.h"
 
 #define CMD_POSITION       "position"
@@ -11,6 +13,8 @@
 #define CMD_SEARCH_POI     "search"
 #define CMD_SHOW_POI       "show"
 #define CMD_RATE           "rate"
+
+static char *cmd_list_all_poi(void);
 
 static char **
 strsplit(const char *str, int len, char sep) {
@@ -54,9 +58,35 @@ process_commands(client_t *client, const char *request, size_t len) {
         if (!client_set_position(client, atof(argv[0]), atof(argv[1]))) {
             return strdup("no coverage for your position!");
         }
+    } else if (!strcmp(command, CMD_LIST_ALL_POI)) {
+        return cmd_list_all_poi();
     }
 
     strlist_free(request_parts);
     if (argv) strlist_free(argv);
     return strdup("ack");
+}
+
+static int
+make_list_from_cols(void *userdata, int argc, char **argv, char **cols) {
+    assert(argc == 1);
+
+    char **result = (char **) userdata;
+    if (!*result) {
+        *result = strdup(argv[0]);
+        return 0;
+    }
+
+    char *old = *result;
+    asprintf(result, "%s, %s", *result, argv[0]);
+    free(old);
+
+    return 0;
+}
+
+static char *
+cmd_list_all_poi(void) {
+    char *list = NULL;
+    db_run("select name from places;", make_list_from_cols, &list);
+    return list;
 }
