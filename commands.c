@@ -21,24 +21,24 @@ static char *cmd_list_all_poi(void);
 static char *cmd_show_poi(const char *poi);
 static char *cmd_rate_poi(const char *poi, const char *rating);
 
-static char **strsplit(const char *str, int len, char sep, int maxparts);
+static char **strsplit(const char *str, char sep, int maxparts);
 static char *strstrip(const char *str, int len);
 static void strlist_free(char **strlist);
 static int make_list_from_cols(void *userdata, int argc, char **argv, char **cols);
 
 // XXX this also strips each part of the string after splitting
 static char **
-strsplit(const char *str, int len, char sep, int maxparts) {
+strsplit(const char *str, char sep, int maxparts) {
     int parts = 1;
-    for (int i = 0; i < len && (maxparts < 0 || parts < maxparts); i++) {
-        parts += (str[i] == sep);
+    for (const char *s = str; *s && (maxparts < 0 || parts < maxparts); s++) {
+        parts += (*s == sep);
     }
 
     const char *s = str;
     char **ret = calloc(parts + 1, sizeof(char *));
     for (int i = 0; i < parts; i++) {
         const char *end = strchr(s, sep);
-        if (!end || i == maxparts - 1) end = str + len;
+        if (!end || i == maxparts - 1) end = s + strlen(s);
         ret[i] = strstrip(s, end - s);
         s = end + 1;
     }
@@ -70,14 +70,14 @@ strlist_free(char **strlist) {
 }
 
 char *
-process_commands(client_t *client, const char *request, size_t len) {
+process_commands(client_t *client, const char *request) {
     char *retval = NULL;
-    char **request_parts = strsplit(request, len, ' ', 2);
+    char **request_parts = strsplit(request, ' ', 2);
     char *command = request_parts[0];
     char *args = request_parts[1];
 
     char **argv = NULL;
-    if (args) argv = strsplit(args, strlen(args), ',', -1);
+    if (args) argv = strsplit(args, ',', -1);
 
     if (!strcmp(command, CMD_POSITION)) {
         if (!client_set_position(client, atof(argv[0]), atof(argv[1]))) {

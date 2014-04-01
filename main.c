@@ -18,8 +18,10 @@ on_client_accepted(int fd, const struct sockaddr *peer) {
 
 static void
 on_incoming_data(int fd, const char *data, size_t len) {
-    char *response = process_commands(client, data, len);
+    char *request = strndup(data, len);
+    char *response = process_commands(client, request);
     send(fd, response, strlen(response), 0);
+    free(request);
     free(response);
 }
 
