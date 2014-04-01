@@ -16,6 +16,10 @@
 
 static char *cmd_list_all_poi(void);
 
+static char ** strsplit(const char *str, int len, char sep);
+static void strlist_free(char **strlist);
+static int make_list_from_cols(void *userdata, int argc, char **argv, char **cols);
+
 static char **
 strsplit(const char *str, int len, char sep) {
     int parts = 1;
@@ -33,7 +37,7 @@ strsplit(const char *str, int len, char sep) {
     return ret;
 }
 
-void
+static void
 strlist_free(char **strlist) {
     int i = 0;
     while (true) {
