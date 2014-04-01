@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <ctype.h>
+
 #include <jansson.h>
 
 #include "db.h"
@@ -20,9 +22,11 @@ static char *cmd_show_poi(const char *poi);
 static char *cmd_rate_poi(const char *poi, const char *rating);
 
 static char **strsplit(const char *str, int len, char sep, int maxparts);
+static char *strstrip(const char *str, int len);
 static void strlist_free(char **strlist);
 static int make_list_from_cols(void *userdata, int argc, char **argv, char **cols);
 
+// XXX this also strips each part of the string after splitting
 static char **
 strsplit(const char *str, int len, char sep, int maxparts) {
     int parts = 1;
@@ -35,11 +39,22 @@ strsplit(const char *str, int len, char sep, int maxparts) {
     for (int i = 0; i < parts; i++) {
         const char *end = strchr(s, sep);
         if (!end || i == maxparts - 1) end = str + len;
-        ret[i] = strndup(s, end - s);
+        ret[i] = strstrip(s, end - s);
         s = end + 1;
     }
 
     return ret;
+}
+
+static char *
+strstrip(const char *str, int len) {
+    const char *start = str;
+    const char *end = str + len - 1;
+
+    while (isspace(*start)) start++;
+    while (end > start && isspace(*end)) end--;
+
+    return strndup(start, end - start + 1);
 }
 
 static void
