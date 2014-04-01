@@ -55,6 +55,7 @@ strlist_free(char **strlist) {
 
 char *
 process_commands(client_t *client, const char *request, size_t len) {
+    char *retval = NULL;
     char **request_parts = strsplit(request, len, ' ', 2);
     char *command = request_parts[0];
     char *args = request_parts[1];
@@ -67,15 +68,17 @@ process_commands(client_t *client, const char *request, size_t len) {
             return strdup("no coverage for your position!");
         }
     } else if (!strcmp(command, CMD_LIST_ALL_POI)) {
-        return cmd_list_all_poi();
+        retval = cmd_list_all_poi();
     } else if (!strcmp(command, CMD_SHOW_POI)) {
-        if (!argv) return strdup("missing argument");
-        return cmd_show_poi(argv[0]);
+        if (!argv) retval = strdup("missing argument");
+        else retval = cmd_show_poi(argv[0]);
+    } else {
+        retval = strdup("invalid command");
     }
 
     strlist_free(request_parts);
     if (argv) strlist_free(argv);
-    return strdup("ack");
+    return retval;
 }
 
 static int
