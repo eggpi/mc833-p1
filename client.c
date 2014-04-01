@@ -18,7 +18,9 @@ client_destroy(client_t *client) {
 
 bool
 client_set_position(client_t *client, double latitude, double longitude) {
-    if (latitude && longitude) {
+    if (0 < latitude && latitude < 1000 &&
+        0 < longitude && longitude < 1000) {
+
         client->latitude = latitude;
         client->longitude = longitude;
         return true;
