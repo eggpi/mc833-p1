@@ -24,7 +24,6 @@ db_run(const char *stmt, db_callback_t callback, void *userdata, ...) {
     va_start(vargs, userdata);
 
     char *query = sqlite3_vmprintf(stmt, vargs);
-    printf("%s\n", query);
     sqlite3_exec(db, query, callback, userdata, NULL);
 
     sqlite3_free(query);
