@@ -16,6 +16,7 @@
 #define CMD_RATE           "rate"
 
 static char *cmd_list_all_poi(void);
+static char *cmd_show_poi(const char *poi);
 
 static char **strsplit(const char *str, int len, char sep, int maxparts);
 static void strlist_free(char **strlist);
@@ -67,6 +68,9 @@ process_commands(client_t *client, const char *request, size_t len) {
         }
     } else if (!strcmp(command, CMD_LIST_ALL_POI)) {
         return cmd_list_all_poi();
+    } else if (!strcmp(command, CMD_SHOW_POI)) {
+        if (!argv) return strdup("missing argument");
+        return cmd_show_poi(argv[0]);
     }
 
     strlist_free(request_parts);
@@ -93,5 +97,29 @@ cmd_list_all_poi(void) {
 
     char *retval = json_dumps(list, 0);
     json_decref(list);
+    return retval;
+}
+
+static int
+make_object_from_cols(void *userdata, int argc, char **argv, char **cols) {
+    json_t *result = (json_t *) userdata;
+
+    for (int i = 0; i < argc; i++) {
+        json_t *value = json_string(argv[i]);
+        json_object_set(result, cols[i], value);
+        json_decref(value);
+    }
+
+    return 0;
+}
+
+static char *
+cmd_show_poi(const char *poi) {
+    json_t *object = json_object();
+    db_run("select name, latitude, longitude from places where name = %Q",
+            make_object_from_cols, object, poi);
+
+    char *retval = json_dumps(object, 0);
+    json_decref(object);
     return retval;
 }

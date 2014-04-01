@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdarg.h>
+
 #include <sqlite3.h>
 
 #include "db.h"
@@ -17,7 +19,15 @@ db_close(void) {
 }
 
 void
-db_run(const char *stmt, db_callback_t callback, void *userdata) {
-    sqlite3_exec(db, stmt, callback, userdata, NULL);
+db_run(const char *stmt, db_callback_t callback, void *userdata, ...) {
+    va_list vargs;
+    va_start(vargs, userdata);
+
+    char *query = sqlite3_vmprintf(stmt, vargs);
+    printf("%s\n", query);
+    sqlite3_exec(db, query, callback, userdata, NULL);
+
+    sqlite3_free(query);
+    va_end(vargs);
     return;
 }
