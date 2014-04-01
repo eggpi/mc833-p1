@@ -16,10 +16,10 @@ GEN_SET_CALLBACK_FUNCTION(accept)
 GEN_SET_CALLBACK_FUNCTION(data)
 GEN_SET_CALLBACK_FUNCTION(close)
 
-#define DISPATCH_METHOD_TO_SERVER(method, ...)  \
-    (server->type == SERVER_TYPE_TCP) ?                 \
-        tcp_server_##method(__VA_ARGS__) :    \
-        udp_server_##method(__VA_ARGS__)      \
+#define DISPATCH_METHOD_TO_SERVER(method, ...) \
+    (server->type == SERVER_TYPE_TCP) ?        \
+        tcp_server_##method(__VA_ARGS__) :     \
+        udp_server_##method(__VA_ARGS__)       \
 
 server_t *
 server_new(server_type_t type, int port) {
