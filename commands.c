@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <jansson.h>
 
 #include "db.h"
 #include "commands.h"
@@ -75,22 +76,20 @@ static int
 make_list_from_cols(void *userdata, int argc, char **argv, char **cols) {
     assert(argc == 1);
 
-    char **result = (char **) userdata;
-    if (!*result) {
-        *result = strdup(argv[0]);
-        return 0;
-    }
+    json_t *result = (json_t *) userdata;
+    json_t *coltext = json_string(argv[0]);
 
-    char *old = *result;
-    asprintf(result, "%s, %s", *result, argv[0]);
-    free(old);
-
+    json_array_append(result, coltext);
+    json_decref(coltext);
     return 0;
 }
 
 static char *
 cmd_list_all_poi(void) {
-    char *list = NULL;
-    db_run("select name from places;", make_list_from_cols, &list);
-    return list;
+    json_t *list = json_array();
+    db_run("select name from places;", make_list_from_cols, list);
+
+    char *retval = json_dumps(list, 0);
+    json_decref(list);
+    return retval;
 }
