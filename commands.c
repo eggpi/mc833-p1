@@ -23,6 +23,7 @@ static char *cmd_show_poi(json_t *args);
 static char *cmd_rate_poi(json_t *args);
 
 static int make_list_from_cols(void *userdata, int argc, char **argv, char **cols);
+static int make_object_from_cols(void *userdata, int argc, char **argv, char **cols);
 
 char *
 process_commands(client_t *client, const char *request) {
