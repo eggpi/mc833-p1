@@ -1,4 +1,4 @@
-CFLAGS = -O2 -Wall -pedantic -std=c99
+CFLAGS = -O0 -g -Wall -pedantic -std=c99
 JANSSON_CFLAGS = `pkg-config --cflags --libs jansson`
 
 server: libserver.a db.o client.o commands.o main.o
