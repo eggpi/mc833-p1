@@ -1,4 +1,4 @@
-CFLAGS = -O0 -g -Wall -pedantic -std=c99 -D_GNU_SOURCE -D_XOPEN_SOURCE=800
+CFLAGS = -O0 -g -Wall -pedantic -std=c99 -D_GNU_SOURCE -D_XOPEN_SOURCE=800 -D_DARWIN_C_SOURCE
 JANSSON_LDFLAGS = `pkg-config --libs jansson`
 JANSSON_CFLAGS = `pkg-config --cflags jansson`
 
