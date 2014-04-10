@@ -1,14 +1,15 @@
-CFLAGS = -O0 -g -Wall -pedantic -std=c99
-JANSSON_CFLAGS = `pkg-config --cflags --libs jansson`
+CFLAGS = -O0 -g -Wall -pedantic -std=c99 -D_GNU_SOURCE -D_XOPEN_SOURCE=800
+JANSSON_LDFLAGS = `pkg-config --libs jansson`
+JANSSON_CFLAGS = `pkg-config --cflags jansson`
 
-server: libserver.a db.o client.o commands.o main.o
-	$(CC) $(JANSSON_CFLAGS) -lsqlite3 $^ -o $@
+server: server.o tcp_server.o udp_server.o db.o client.o commands.o main.o
+	$(CC) $(JANSSON_LDFLAGS) -lsqlite3 $^ -o $@
+
+commands.o: commands.c
+	$(CC) $(CFLAGS) $(JANSSON_CFLAGS) $^ -c -o $@
 
 %.o: %.c
 	$(CC) $< $(CFLAGS) -c -o $@
 
-libserver.a: server.o tcp_server.o udp_server.o
-	$(AR) -rcs $@ $^
-
 clean:
-	rm *.o *.a server
+	rm *.o server
