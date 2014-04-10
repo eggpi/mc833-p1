@@ -1,15 +1,25 @@
 CFLAGS = -O0 -g -Wall -pedantic -std=c99 -D_GNU_SOURCE -D_XOPEN_SOURCE=800 -D_DARWIN_C_SOURCE
-JANSSON_LDFLAGS = `pkg-config --libs jansson`
-JANSSON_CFLAGS = `pkg-config --cflags jansson`
 
-server: server.o tcp_server.o udp_server.o db.o client.o commands.o main.o
-	$(CC) $(JANSSON_LDFLAGS) -lsqlite3 $^ -o $@
+export PKG_CONFIG_PATH=$(PWD)/lib/jansson-2.6/build/lib/pkgconfig
+export JANSSON_CFLAGS=`PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --cflags jansson`
+export JANSSON_LDFLAGS=`PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --libs jansson`
 
-commands.o: commands.c
-	$(CC) $(CFLAGS) $(JANSSON_CFLAGS) $^ -c -o $@
+server: server.o tcp_server.o udp_server.o db.o client.o commands.o main.o libjansson
+	$(CC) $(CFLAGS) $(JANSSON_LDFLAGS) -lsqlite3 $(filter-out libjansson, $^) -o $@
+
+commands.o: commands.c libjansson
+	$(CC) $(CFLAGS) $(JANSSON_CFLAGS) $(filter-out libjansson, $^) -c -o $@
 
 %.o: %.c
 	$(CC) $< $(CFLAGS) -c -o $@
+
+libjansson: lib/jansson-2.6/.built
+
+lib/jansson-2.6/.built:
+	cd lib/jansson-2.6/; \
+	./configure --prefix=$(PWD)/lib/jansson-2.6/build/; \
+	$(MAKE) install;
+	touch $@
 
 clean:
 	rm *.o server
