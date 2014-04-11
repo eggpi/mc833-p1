@@ -2,7 +2,7 @@ CFLAGS = -O0 -g -Wall -pedantic -std=c99 -D_GNU_SOURCE -D_XOPEN_SOURCE=800 -D_DA
 
 export PKG_CONFIG_PATH=$(PWD)/lib/jansson-2.6/build/lib/pkgconfig
 export JANSSON_CFLAGS=`PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --cflags jansson`
-export JANSSON_LDFLAGS=`PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --libs jansson`
+export JANSSON_LDFLAGS=`PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --libs jansson` -Wl,-rpath $(PWD)/lib/jansson-2.6/build/lib/
 
 server: server.o tcp_server.o udp_server.o db.o client.o commands.o main.o libjansson
 	$(CC) $(CFLAGS) $(JANSSON_LDFLAGS) -lsqlite3 $(filter-out libjansson, $^) -o $@
