@@ -34,7 +34,7 @@ tcp_server_setup_socket(server_t *server, int port) {
         return;
     }
 
-    struct sigaction action = {0};
+    struct sigaction action = {{0}};
     action.sa_handler = on_child_exit;
     action.sa_flags = SA_RESTART;
     sigaction(SIGCHLD, &action, NULL);
