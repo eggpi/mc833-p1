@@ -21,9 +21,11 @@ static char *cmd_set_position(client_t *client, json_t *args);
 static char *cmd_list_all_poi(void);
 static char *cmd_show_poi(json_t *args);
 static char *cmd_rate_poi(json_t *args);
+static char *cmd_list_close_poi(client_t *client, json_t *args);
 
 static int make_list_from_cols(void *userdata, int argc, char **argv, char **cols);
 static int make_object_from_cols(void *userdata, int argc, char **argv, char **cols);
+static int make_array_of_object_from_cols(void *userdata, int argc, char **argv, char **cols);
 
 char *
 process_commands(client_t *client, const char *request) {
@@ -52,6 +54,8 @@ process_commands(client_t *client, const char *request) {
         retval = cmd_show_poi(args);
     } else if (!strcmp(command, CMD_RATE)) {
         retval = cmd_rate_poi(args);
+    } else if (!strcmp(command, CMD_LIST_CLOSE_POI)) {
+        retval = cmd_list_close_poi(client, args);
     } else {
         retval = strdup("invalid command");
     }
@@ -149,4 +153,41 @@ cmd_rate_poi(json_t *args) {
     // remove rating so we only send the poi to cmd_show_poi
     json_array_remove(args, 1);
     return cmd_show_poi(args);
+}
+
+static int
+make_array_of_object_from_cols(void *userdata, int argc, char **argv, char **cols) {
+    json_t *object = json_object();
+    make_object_from_cols(object, argc, argv, cols);
+
+    json_t *array = (json_t *) userdata;
+    json_array_append(array, object);
+    json_decref(object);
+    return 0;
+}
+
+static char *
+cmd_list_close_poi(client_t *client, json_t *args) {
+    json_t *array = json_array();
+    double latitude, longitude;
+    char *latitude_str, *longitude_str;
+
+    if (!client_get_position(client, &latitude, &longitude)) {
+        return strdup("client has no position.");
+    }
+
+    asprintf(&latitude_str, "%.2f", latitude);
+    asprintf(&longitude_str, "%.2f", latitude);
+
+    db_run("select * from places where "
+           "POINT_IN_CIRCLE(%Q, %Q, %Q, latitude, longitude) = 1;",
+           make_array_of_object_from_cols, array, latitude_str, longitude_str,
+           "100");
+
+    free(latitude_str);
+    free(longitude_str);
+
+    char *retval = json_dumps(array, 0);
+    json_decref(array);
+    return retval;
 }

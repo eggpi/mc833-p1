@@ -28,3 +28,14 @@ client_set_position(client_t *client, double latitude, double longitude) {
 
     return false;
 }
+
+bool
+client_get_position(client_t *client, double *latitude, double *longitude) {
+    if (client->latitude && client->longitude) {
+        *latitude = client->latitude;
+        *longitude = client->longitude;
+        return true;
+    }
+
+    return false;
+}
