@@ -10,14 +10,12 @@
 #include "db.h"
 #include "commands.h"
 
-#define CMD_POSITION       "position"
 #define CMD_LIST_ALL_POI   "apoi"
 #define CMD_LIST_CLOSE_POI "cpoi"
 #define CMD_SEARCH_POI     "search"
 #define CMD_SHOW_POI       "show"
 #define CMD_RATE           "rate"
 
-static char *cmd_set_position(client_t *client, json_t *args);
 static char *cmd_list_all_poi(void);
 static char *cmd_show_poi(json_t *args);
 static char *cmd_rate_poi(json_t *args);
@@ -33,6 +31,7 @@ process_commands(client_t *client, const char *request) {
     const char *command;
     json_t *args = NULL;
     char *retval = NULL;
+    double latitude = 0, longitude = 0;
 
     json_t *jreq = json_loads(request, 0, NULL);
     if (!request) {
@@ -41,15 +40,27 @@ process_commands(client_t *client, const char *request) {
     }
 
     int ok;
-    ok = json_unpack(jreq, "{s:s, s:o}", "command", &command, "args", &args);
+    ok = json_unpack(jreq, "{s?:f, s?:f, s:s, s:o}",
+            "latitude", &latitude, "longitude", &longitude,
+            "command", &command, "args", &args);
     if (ok < 0) {
         retval = strdup("bad request.");
         goto bad_request;
     }
 
-    if (!strcmp(command, CMD_POSITION)) {
-        retval = cmd_set_position(client, args);
-    } else if (!strcmp(command, CMD_LIST_ALL_POI)) {
+    if (latitude || longitude) {
+        if (!client_set_position(client, latitude, longitude)) {
+            retval = strdup("no coverage for your position.");
+            goto bad_request;
+        }
+    }
+
+    if (!client_get_position(client, &latitude, &longitude)) {
+        retval = strdup("client has no position.");
+        goto bad_request;
+    }
+
+    if (!strcmp(command, CMD_LIST_ALL_POI)) {
         retval = cmd_list_all_poi();
     } else if (!strcmp(command, CMD_SHOW_POI)) {
         retval = cmd_show_poi(args);
@@ -69,20 +80,6 @@ bad_request:
     if (jreq) json_decref(jreq);
 
     return retval;
-}
-
-static char *
-cmd_set_position(client_t *client, json_t *args) {
-    double latitude, longitude;
-    if (json_unpack(args, "[f, f]", &latitude, &longitude) < 0) {
-        return strdup("bad arguments.");
-    }
-
-    if (!client_set_position(client, latitude, longitude)) {
-        return strdup("no coverage for your position!");
-    }
-
-    return strdup("ack");
 }
 
 static int
