@@ -22,6 +22,7 @@ static char *cmd_list_all_poi(void);
 static char *cmd_show_poi(json_t *args);
 static char *cmd_rate_poi(json_t *args);
 static char *cmd_list_close_poi(client_t *client, json_t *args);
+static char *cmd_search_poi(client_t *client, json_t *args);
 
 static int make_list_from_cols(void *userdata, int argc, char **argv, char **cols);
 static int make_object_from_cols(void *userdata, int argc, char **argv, char **cols);
@@ -56,6 +57,8 @@ process_commands(client_t *client, const char *request) {
         retval = cmd_rate_poi(args);
     } else if (!strcmp(command, CMD_LIST_CLOSE_POI)) {
         retval = cmd_list_close_poi(client, args);
+    } else if (!strcmp(command, CMD_SEARCH_POI)) {
+        retval = cmd_search_poi(client, args);
     } else {
         retval = strdup("invalid command");
     }
@@ -183,6 +186,38 @@ cmd_list_close_poi(client_t *client, json_t *args) {
            "POINT_IN_CIRCLE(%Q, %Q, %Q, latitude, longitude) = 1;",
            make_array_of_object_from_cols, array, latitude_str, longitude_str,
            "100");
+
+    free(latitude_str);
+    free(longitude_str);
+
+    char *retval = json_dumps(array, 0);
+    json_decref(array);
+    return retval;
+}
+
+static char *
+cmd_search_poi(client_t *client, json_t *args) {
+    json_t *array = json_array();
+    double latitude, longitude;
+    char *latitude_str, *longitude_str;
+    const char *category;
+
+    if (!client_get_position(client, &latitude, &longitude)) {
+        return strdup("client has no position.");
+    }
+
+    if (json_unpack(args, "[s]", &category) < 0) {
+        return strdup("bad arguments.");
+    }
+
+    asprintf(&latitude_str, "%.2f", latitude);
+    asprintf(&longitude_str, "%.2f", latitude);
+
+    db_run("select * from places where "
+           "POINT_IN_CIRCLE(%Q, %Q, %Q, latitude, longitude) = 1 and "
+           "category = %Q;",
+           make_array_of_object_from_cols, array, latitude_str, longitude_str,
+           "100", category);
 
     free(latitude_str);
     free(longitude_str);
