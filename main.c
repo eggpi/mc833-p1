@@ -33,9 +33,29 @@ on_client_closed(int fd, const struct sockaddr *peer) {
     client = NULL;
 }
 
+static void
+read_args(const int argc, char * const argv[], server_type_t* type, int* port) {
+  if (argc == 2) {
+    *type = SERVER_TYPE_TCP;
+    *port = atoi(argv[1]);
+  }
+  else if (argc == 3) {
+    if (argv[2][0] == 'u') *type = SERVER_TYPE_UDP;
+    else *type = SERVER_TYPE_TCP;
+    *port = atoi(argv[1]);
+  }
+  else  {
+    *type = SERVER_TYPE_TCP;
+    *port = 8989;
+  }
+}
+
 int
-main(void) {
-    server_t *server = server_new(SERVER_TYPE_TCP, 8989);
+main(int argc, char *argv[]) {
+    server_type_t server_type;
+    int port;
+    read_args(argc, argv, &server_type, &port);
+    server_t *server = server_new(server_type, port);
     server_set_accept_callback(server, on_client_accepted);
     server_set_data_callback(server, on_incoming_data);
     server_set_close_callback(server, on_client_closed);
