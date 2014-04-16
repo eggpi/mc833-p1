@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "client.h"
+#include "client_class.h"
 
 struct client {
     double latitude, longitude;

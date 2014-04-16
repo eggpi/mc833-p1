@@ -5,7 +5,7 @@
 
 #include "db.h"
 #include "server.h"
-#include "client.h"
+#include "client_class.h"
 #include "commands.h"
 
 static client_t *client;

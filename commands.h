@@ -1,5 +1,5 @@
 #pragma once
 
-#include "client.h"
+#include "client_class.h"
 
 char *process_commands(client_t *client, const char *request);
