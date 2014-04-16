@@ -64,7 +64,7 @@ create_socket_connection (struct sockaddr* sin, const server_type_t type) {
   }
 
   if (type == SERVER_TYPE_TCP) {
-    if (connect(s, sin, sizeof(sin)) < 0) {
+    if (connect(s, sin, sizeof(*sin)) < 0) {
       perror("client: connect");
       close(s);
       exit(1);
@@ -75,18 +75,28 @@ create_socket_connection (struct sockaddr* sin, const server_type_t type) {
 }
 
 static void
+command_to_json(char buf[], int bufsiz) {
+  char json[bufsiz];
+  //char *pch;
+  strcpy(json,buf);
+  //pch = strtok (buf," ,");
+
+}
+
+static void
 client_loop(int socket, struct sockaddr * servaddr) {
   char buf[CLIENT_DEFAULT_BUFSIZ];
   int n;
   int elapsed;
   while (fgets(buf, sizeof(buf), stdin)) {
     elapsed = (int)time(NULL);
+    command_to_json(buf,sizeof(buf));
     sendto(socket,buf,strlen(buf),0,servaddr,sizeof(servaddr));
     n = recvfrom(socket,buf,sizeof(buf),0,NULL,NULL);
     elapsed = (int)time(NULL)-elapsed;
-    fprintf(stdout,"\tTime elapsed since request: %d",elapsed);
-    buf[n] = 0;
+    buf[n] = '\n';
     fputs(buf,stdout);
+    fprintf(stdout,"\tTime elapsed since request: %d\n",elapsed);
   } 
 }
 
