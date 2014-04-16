@@ -4,6 +4,8 @@ export PKG_CONFIG_PATH=$(PWD)/lib/jansson-2.6/build/lib/pkgconfig
 export JANSSON_CFLAGS=`PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --cflags jansson`
 export JANSSON_LDFLAGS=`PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --libs jansson` -Wl,-rpath $(PWD)/lib/jansson-2.6/build/lib/
 
+all: server client
+
 server: server.o tcp_server.o udp_server.o db.o client_class.o commands.o main.o libjansson
 	$(CC) $(filter-out libjansson, $^) $(CFLAGS) $(JANSSON_LDFLAGS) -lsqlite3 -o $@
 
@@ -25,4 +27,4 @@ lib/jansson-2.6/.built:
 	touch $@
 
 clean:
-	rm *.o server
+	rm *.o server client
