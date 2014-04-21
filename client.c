@@ -4,14 +4,28 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <time.h>
-#include "server.h"
-#include "client_class.h"
+#include <jansson.h>
+#include <stdbool.h>
+
+#define CMD_LIST_ALL_POI   "apoi"
+#define CMD_LIST_CLOSE_POI "cpoi"
+#define CMD_SEARCH_POI     "search"
+#define CMD_SHOW_POI       "show"
+#define CMD_RATE           "rate"
 
 static const unsigned int CLIENT_DEFAULT_BUFSIZ = 1024;
+static double client_longitude;
+static double client_latitude;
+static bool position_set;
+
+typedef enum {
+  CLIENT_TYPE_TCP,
+  CLIENT_TYPE_UDP
+} client_type_t;
 
 static void
 read_args(const int argc, char * const argv[],
-    struct hostent** ip, int* port, server_type_t* type) {
+    struct hostent** ip, int* port, client_type_t* type) {
   if (argc > 1) {
     *ip = gethostbyname(argv[1]);
   }
@@ -31,10 +45,10 @@ read_args(const int argc, char * const argv[],
   }
 
   if (argc > 3 && argv[3][0] == 'u') {
-    *type = SERVER_TYPE_UDP;
+    *type = CLIENT_TYPE_UDP;
   }
   else {
-    *type = SERVER_TYPE_TCP;
+    *type = CLIENT_TYPE_TCP;
   }
 }
 
@@ -49,9 +63,9 @@ build_address_structure(struct hostent *hp, const int port) {
 }
 
 static int
-create_socket_connection (struct sockaddr* sin, const server_type_t type) {
+create_socket_connection (struct sockaddr* sin, const client_type_t type) {
   int s, sock_type;
-  if (type == SERVER_TYPE_UDP) {
+  if (type == CLIENT_TYPE_UDP) {
     sock_type = SOCK_DGRAM;
   }
   else {
@@ -63,7 +77,7 @@ create_socket_connection (struct sockaddr* sin, const server_type_t type) {
     exit(1);
   }
 
-  if (type == SERVER_TYPE_TCP) {
+  if (type == CLIENT_TYPE_TCP) {
     if (connect(s, sin, sizeof(*sin)) < 0) {
       perror("client: connect");
       close(s);
@@ -81,6 +95,65 @@ command_to_json(char buf[], int bufsiz) {
   strcpy(json,buf);
   //pch = strtok (buf," ,");
 
+}
+
+static void
+set_position(double latitude, double longitude) {
+  client_latitude = latitude;
+  client_longitude = longitude;
+  position_set = true;
+}
+
+static bool
+write_position(json_t* root) {
+  if (!position_set) return false;
+
+  json_t *lat_json = json_real(client_latitude);
+  json_t *long_json = json_real(client_longitude);
+  json_object_set(root, "latitude", lat_json);
+  json_object_set(root, "longitude", long_json);
+  json_decref(lat_json);
+  json_decref(long_json); 
+
+  return true;
+}
+
+static json_t*
+basic_command_json(const client_type_t type, char option) {
+  json_t* root = json_object();
+  bool needs_position = (type == CLIENT_TYPE_UDP);
+
+  json_t* command = NULL;
+  switch (option) {
+    case 'a':
+      command = json_string(CMD_LIST_ALL_POI);
+      break;
+    case 'c':
+      command = json_string(CMD_LIST_CLOSE_POI);
+      needs_position = true;
+      break;
+    case 'f':
+      command = json_string(CMD_SEARCH_POI);
+      needs_position = true;
+      break;
+    case 's':
+      command = json_string(CMD_SHOW_POI);
+      break;
+    case 'r':
+      command = json_string(CMD_RATE);
+      break;
+  }
+  if (!command) {
+    return NULL;
+  }
+
+  if (needs_position) {
+    if(!write_position(root)) {
+      return NULL;
+    }
+  }
+
+  return root;
 }
 
 static void
@@ -102,10 +175,11 @@ client_loop(int socket, struct sockaddr * servaddr) {
 
 int
 main(int argc, char* argv[]) {
-  server_type_t server_type;
+  client_type_t server_type;
   int port, s;
   struct hostent* host;
   struct sockaddr_in sin;
+  position_set = false;
 
   read_args(argc, argv, &host, &port, &server_type);
   sin = build_address_structure(host, port);
