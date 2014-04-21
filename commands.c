@@ -35,7 +35,7 @@ process_commands(client_t *client, const char *request) {
 
     json_t *jreq = json_loads(request, 0, NULL);
     if (!request) {
-        retval = strdup("bad request.");
+        retval = strdup("bad request. 1");
         goto bad_request;
     }
 
@@ -44,7 +44,7 @@ process_commands(client_t *client, const char *request) {
             "latitude", &latitude, "longitude", &longitude,
             "command", &command, "args", &args);
     if (ok < 0) {
-        retval = strdup("bad request.");
+        retval = strdup("bad request. 2");
         goto bad_request;
     }
 
@@ -99,7 +99,7 @@ cmd_list_all_poi(void) {
     json_t *list = json_array();
     db_run("select name from places;", make_list_from_cols, list);
 
-    char *retval = json_dumps(list, 0);
+    char *retval = json_dumps(list, JSON_INDENT(2));
     json_decref(list);
     return retval;
 }
@@ -128,7 +128,7 @@ cmd_show_poi(json_t *args) {
     db_run("select * from places where name = %Q",
             make_object_from_cols, object, poi);
 
-    char *retval = json_dumps(object, 0);
+    char *retval = json_dumps(object, JSON_INDENT(2));
     json_decref(object);
     return retval;
 }
@@ -187,7 +187,7 @@ cmd_list_close_poi(client_t *client, json_t *args) {
     free(latitude_str);
     free(longitude_str);
 
-    char *retval = json_dumps(array, 0);
+    char *retval = json_dumps(array, JSON_INDENT(2));
     json_decref(array);
     return retval;
 }
@@ -219,7 +219,7 @@ cmd_search_poi(client_t *client, json_t *args) {
     free(latitude_str);
     free(longitude_str);
 
-    char *retval = json_dumps(array, 0);
+    char *retval = json_dumps(array, JSON_INDENT(2));
     json_decref(array);
     return retval;
 }

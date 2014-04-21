@@ -9,8 +9,8 @@ all: server client
 server: server.o tcp_server.o udp_server.o db.o client_class.o commands.o main.o libjansson
 	$(CC) $(filter-out libjansson, $^) $(CFLAGS) $(JANSSON_LDFLAGS) -lsqlite3 -o $@
 
-client: client.o
-	$(CC) $< $(CFLAGS) -o $@
+client: client.c
+	$(CC) $< $(CFLAGS) $(JANSSON_LDFLAGS) -o $@
 
 commands.o: commands.c libjansson
 	$(CC) $(CFLAGS) $(JANSSON_CFLAGS) $(filter-out libjansson, $^) -c -o $@

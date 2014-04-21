@@ -16,7 +16,7 @@
 static const unsigned int CLIENT_DEFAULT_BUFSIZ = 1024;
 static double client_longitude;
 static double client_latitude;
-static bool position_set;
+static bool first_command;
 
 typedef enum {
   CLIENT_TYPE_TCP,
@@ -89,38 +89,56 @@ create_socket_connection (struct sockaddr* sin, const client_type_t type) {
 }
 
 static void
-command_to_json(char buf[], int bufsiz) {
-  char json[bufsiz];
-  //char *pch;
-  strcpy(json,buf);
-  //pch = strtok (buf," ,");
+set_position() {
+  double lat = 1, lon = 1;
 
+  printf("Set your position (latitude,longitude):\n");
+  scanf("%lf,%lf", &lat, &lon);
+  
+  client_latitude = lat;
+  client_longitude = lon;
 }
 
 static void
-set_position(double latitude, double longitude) {
-  client_latitude = latitude;
-  client_longitude = longitude;
-  position_set = true;
-}
-
-static bool
 write_position(json_t* root) {
-  if (!position_set) return false;
-
   json_t *lat_json = json_real(client_latitude);
   json_t *long_json = json_real(client_longitude);
   json_object_set(root, "latitude", lat_json);
   json_object_set(root, "longitude", long_json);
   json_decref(lat_json);
-  json_decref(long_json); 
+  json_decref(long_json);
+}
 
-  return true;
+static json_t*
+read_command_args(char option) {
+  json_t* args = json_array();
+  json_t* aux = NULL;
+  char name[CLIENT_DEFAULT_BUFSIZ/2];
+  
+  switch (option) {
+    case 'f':
+      printf("Name of category:\n");
+      scanf(" %s", name);
+      aux = json_string(name);
+      json_array_append(args, aux);
+      json_decref (aux);
+      break;
+    case 's':
+      break;
+    case 'r':
+      printf("Name of the POI to be rated:\n");
+      scanf(" %s", name);
+      aux = json_string(name);
+      json_array_append(args, aux);
+      json_decref (aux);
+      break;
+  }
+  
+  return args;
 }
 
 static json_t*
 basic_command_json(const client_type_t type, char option) {
-  json_t* root = json_object();
   bool needs_position = (type == CLIENT_TYPE_UDP);
 
   json_t* command = NULL;
@@ -147,30 +165,69 @@ basic_command_json(const client_type_t type, char option) {
     return NULL;
   }
 
+  json_t* root = json_object();
+
+  json_object_set(root, "command", command);
+  json_decref(command);
+
+  json_t* args = read_command_args(option);
+  json_object_set(root, "args", args);
+  json_decref(args);
+
+  if (first_command) {
+    first_command = false;
+    needs_position = true;
+  }
+
   if (needs_position) {
-    if(!write_position(root)) {
-      return NULL;
-    }
+    write_position(root);
   }
 
   return root;
 }
 
 static void
-client_loop(int socket, struct sockaddr * servaddr) {
+print_command_list() {
+  printf("Available commands:\n\tp - change your position\n\ta - list all poi\n\tc - list close poi\n");
+  printf("\tf - search poi\n\ts - show poi\n\tr - rate poi\n\tq - quit client\n\n");
+}
+
+static void
+client_loop(int socket, struct sockaddr * servaddr, client_type_t type) {
   char buf[CLIENT_DEFAULT_BUFSIZ];
+  char* outbuf;
+  char option = 'X';
+  json_t* command;
   int n;
   int elapsed;
-  while (fgets(buf, sizeof(buf), stdin)) {
+
+  set_position();
+  while (option != 'q') {
+    print_command_list();
+    scanf(" %c",&option);
+    if (option == 'q') {
+      break;
+    }
+    if (option == 'p') {
+      set_position();
+      continue;
+    }
+    command = basic_command_json(type,option);
+    if (!command) {
+      printf("Option not recognized.\n");
+      continue;
+    }
+    outbuf = json_dumps(command,JSON_INDENT(2));
     elapsed = (int)time(NULL);
-    command_to_json(buf,sizeof(buf));
-    sendto(socket,buf,strlen(buf),0,servaddr,sizeof(servaddr));
+    sendto(socket,outbuf,strlen(outbuf),0,servaddr,sizeof(servaddr));
     n = recvfrom(socket,buf,sizeof(buf),0,NULL,NULL);
     elapsed = (int)time(NULL)-elapsed;
     buf[n] = '\n';
     fputs(buf,stdout);
-    fprintf(stdout,"\tTime elapsed since request: %d\n",elapsed);
-  } 
+    fprintf(stdout,"\nTime elapsed since request: %d\n",elapsed);
+    free(outbuf);
+    json_decref(command);
+  }
 }
 
 int
@@ -179,12 +236,12 @@ main(int argc, char* argv[]) {
   int port, s;
   struct hostent* host;
   struct sockaddr_in sin;
-  position_set = false;
+  first_command = true;
 
   read_args(argc, argv, &host, &port, &server_type);
   sin = build_address_structure(host, port);
   s = create_socket_connection((struct sockaddr*)&sin, server_type);
-  client_loop(s,(struct sockaddr*)&sin);
+  client_loop(s,(struct sockaddr*)&sin,server_type);
 
   return 0;
 }
