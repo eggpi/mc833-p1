@@ -45,8 +45,8 @@ read_args(const int argc, char * const argv[], int* port, server_type_t* type) {
     }
     else {
       *type = SERVER_TYPE_TCP;
-      *port = atoi(argv[1]);
     }
+    *port = atoi(argv[1]);
   }
   else {
     *type = SERVER_TYPE_TCP;
