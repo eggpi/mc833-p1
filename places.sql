@@ -2,3 +2,11 @@ CREATE TABLE places(name string, latitude double, longitude double, rating doubl
 INSERT INTO "places" VALUES('pepe loco',5.0,5.0,5.2,'restaurant');
 INSERT INTO "places" VALUES('joe & leo''s',10.0,12.0,6.6,'restaurant');
 INSERT INTO "places" VALUES('delta blues bar',5.0,4.2,6.0,'bar');
+INSERT INTO "places" VALUES('academia',50.0,42.0,6.0,'esporte');
+INSERT INTO "places" VALUES('ginasio',55.0,200.2,6.0,'esporte');
+INSERT INTO "places" VALUES('piscina',495.0,234.2,6.0,'esporte');
+INSERT INTO "places" VALUES('la salamandra',999.0,999.0,9.0,'restaurante');
+INSERT INTO "places" VALUES('subway',15.0,4.2,6.0,'restaurante');
+INSERT INTO "places" VALUES('aulus',7.0,40.2,6.0,'bar');
+INSERT INTO "places" VALUES('star clean',1.0,0.2,6.0,'bar');
+INSERT INTO "places" VALUES('star trash',1.1,0.2,6.0,'bar');

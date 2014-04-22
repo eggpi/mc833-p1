@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 
 #include "db.h"
 #include "server.h"
@@ -19,7 +20,16 @@ on_client_accepted(int fd, const struct sockaddr *peer) {
 static void
 on_incoming_data(int fd, const char *data, size_t len) {
   char *request = strndup(data, len);
+  struct timeval  before;
+  struct timeval  after;
+  gettimeofday(&before, NULL);
   char *response = process_commands(client, request);
+  gettimeofday(&after, NULL);
+
+  double time_in_mill = 
+    (after.tv_sec-before.tv_sec) * 1000.0 + (after.tv_usec-before.tv_usec) / 1000.0 ;
+  fprintf(stdout,"Time spent with request '%s': %.3f ms\n",request,time_in_mill);
+
   send(fd, response, strlen(response), 0);
   free(request);
   free(response);

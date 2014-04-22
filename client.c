@@ -237,7 +237,7 @@ client_loop(int socket, struct sockaddr * servaddr, client_type_t type) {
       printf("Option not recognized.\n");
       continue;
     }
-    outbuf = json_dumps(command,JSON_INDENT(2));
+    outbuf = json_dumps(command,JSON_COMPACT);
     gettimeofday(&before, NULL);
     sendto(socket,outbuf,strlen(outbuf),0,servaddr,sizeof(servaddr));
     n = recvfrom(socket,buf,sizeof(buf)-2,0,NULL,NULL);

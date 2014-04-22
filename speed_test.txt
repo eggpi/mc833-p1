@@ -1,6 +1,14 @@
 4,4
 a
 c
+a
+s
+pepe loco
+r
+pepe loco
+5.0
+f
+bar
 p
 999,999
 c
