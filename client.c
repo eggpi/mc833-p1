@@ -244,7 +244,7 @@ client_loop(int socket, struct sockaddr * servaddr, client_type_t type) {
     gettimeofday(&after, NULL); 
     buf[n] = '\0';
     fprintf(stdout, "%s", buf);
-    fprintf(stdout,"\nApproximated time elapsed since request: %.3fms\n",time_difference(after,before));
+    fprintf(stdout,"\nApproximated time elapsed since request: %.3f ms\n",time_difference(after,before));
     free(outbuf);
     json_decref(command);
   }
