@@ -122,21 +122,32 @@ read_command_args(char option) {
   json_t* args = json_array();
   json_t* aux = NULL;
   char name[CLIENT_DEFAULT_BUFSIZ/2];
+  double rate;
 
   switch (option) {
     case 'f':
       printf("Name of category:\n");
-      scanf(" %s", name);
+      scanf(" %[^\n]s", name);
       aux = json_string(name);
       json_array_append(args, aux);
       json_decref (aux);
       break;
     case 's':
+      printf("Name of the POI:\n");
+      scanf(" %[^\n]s", name);
+      aux = json_string(name);
+      json_array_append(args, aux);
+      json_decref (aux);
       break;
     case 'r':
       printf("Name of the POI to be rated:\n");
-      scanf(" %s", name);
+      scanf(" %[^\n]s", name);
       aux = json_string(name);
+      json_array_append(args, aux);
+      json_decref (aux);
+      printf("Desired rate:\n");
+      scanf(" %lf", &rate);
+      aux = json_real(rate);
       json_array_append(args, aux);
       json_decref (aux);
       break;
