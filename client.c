@@ -6,6 +6,7 @@
 #include <time.h>
 #include <jansson.h>
 #include <stdbool.h>
+#include <sys/time.h>
 
 #define CMD_LIST_ALL_POI   "apoi"
 #define CMD_LIST_CLOSE_POI "cpoi"
@@ -22,6 +23,13 @@ typedef enum {
   CLIENT_TYPE_TCP,
   CLIENT_TYPE_UDP
 } client_type_t;
+
+static double
+time_difference(struct timeval  after, struct timeval  before) {
+  double time_in_mill = 
+    (after.tv_sec-before.tv_sec) * 1000.0 + (after.tv_usec-before.tv_usec) / 1000.0 ; // convert tv_sec & tv_usec to millisecond
+  return time_in_mill;
+}
 
 static void
 read_args(const int argc, char * const argv[],
@@ -94,7 +102,7 @@ set_position() {
 
   printf("Set your position (latitude,longitude):\n");
   scanf("%lf,%lf", &lat, &lon);
-  
+
   client_latitude = lat;
   client_longitude = lon;
 }
@@ -114,7 +122,7 @@ read_command_args(char option) {
   json_t* args = json_array();
   json_t* aux = NULL;
   char name[CLIENT_DEFAULT_BUFSIZ/2];
-  
+
   switch (option) {
     case 'f':
       printf("Name of category:\n");
@@ -133,7 +141,7 @@ read_command_args(char option) {
       json_decref (aux);
       break;
   }
-  
+
   return args;
 }
 
@@ -199,7 +207,8 @@ client_loop(int socket, struct sockaddr * servaddr, client_type_t type) {
   char option = 'X';
   json_t* command;
   int n;
-  int elapsed;
+  struct timeval  before;
+  struct timeval  after;
 
   set_position();
   while (option != 'q') {
@@ -218,13 +227,13 @@ client_loop(int socket, struct sockaddr * servaddr, client_type_t type) {
       continue;
     }
     outbuf = json_dumps(command,JSON_INDENT(2));
-    elapsed = (int)time(NULL);
+    gettimeofday(&before, NULL);
     sendto(socket,outbuf,strlen(outbuf),0,servaddr,sizeof(servaddr));
-    n = recvfrom(socket,buf,sizeof(buf),0,NULL,NULL);
-    elapsed = (int)time(NULL)-elapsed;
-    buf[n] = '\n';
-    fputs(buf,stdout);
-    fprintf(stdout,"\nTime elapsed since request: %d\n",elapsed);
+    n = recvfrom(socket,buf,sizeof(buf)-2,0,NULL,NULL);
+    gettimeofday(&after, NULL); 
+    buf[n] = '\0';
+    fprintf(stdout, "%s", buf);
+    fprintf(stdout,"\nApproximated time elapsed since request: %.3fms\n",time_difference(after,before));
     free(outbuf);
     json_decref(command);
   }

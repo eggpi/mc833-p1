@@ -21,7 +21,6 @@ on_incoming_data(int fd, const char *data, size_t len) {
   char *request = strndup(data, len);
   char *response = process_commands(client, request);
   send(fd, response, strlen(response), 0);
-  send(fd, "\n", 1, 0);
   free(request);
   free(response);
 }
