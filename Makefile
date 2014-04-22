@@ -16,7 +16,7 @@ places.sqlite3: places.sql
 
 client: client.o
 	$(CC) $^ $(CFLAGS) $(JANSSON_LDFLAGS) -o $@
-	
+
 client.o: client.c
 		$(CC) $(CFLAGS) $(JANSSON_CFLAGS) $^ -c -o $@
 
