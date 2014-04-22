@@ -1,6 +1,6 @@
 CFLAGS = -O0 -g -Wall -Werror -pedantic -std=c99 -D_GNU_SOURCE -D_XOPEN_SOURCE=800 -D_DARWIN_C_SOURCE
 IP = localhost
-DOOR = 8989
+PORT = 8989
 
 export PKG_CONFIG_PATH=$(PWD)/lib/jansson-2.6/build/lib/pkgconfig
 export JANSSON_CFLAGS=`PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --cflags jansson`
@@ -39,10 +39,10 @@ clean:
 
 .PHONY: test_tcp
 test_tcp: client speed_test.txt
-	./client $(IP) $(DOOR) < speed_test.txt | grep 'elapsed' > $@ ;\
+	./client $(IP) $(PORT) < speed_test.txt | grep 'elapsed' > $@ ;\
 	awk '{ sum += $$6 } END { print "Total: ", sum }' $@ >> $@
 
 .PHONY: test_udp
 test_udp: client speed_test.txt
-	./client $(IP) $(DOOR) u < speed_test.txt | grep 'elapsed' > $@ ;\
+	./client $(IP) $(PORT) u < speed_test.txt | grep 'elapsed' > $@ ;\
 	awk '{ sum += $$6 } END { print "Total: ", sum }' $@ >> $@
