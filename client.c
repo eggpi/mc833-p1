@@ -239,7 +239,7 @@ client_loop(int socket, struct sockaddr * servaddr, client_type_t type) {
     }
     outbuf = json_dumps(command,JSON_COMPACT);
     gettimeofday(&before, NULL);
-    sendto(socket,outbuf,strlen(outbuf),0,servaddr,sizeof(servaddr));
+    sendto(socket,outbuf,strlen(outbuf)+1,0,servaddr,sizeof(servaddr));
     n = recvfrom(socket,buf,sizeof(buf)-2,0,NULL,NULL);
     gettimeofday(&after, NULL); 
     buf[n] = '\0';
