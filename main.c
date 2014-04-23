@@ -58,7 +58,7 @@ on_incoming_data(int fd, const char *data, size_t len) {
     (after.tv_sec-before.tv_sec) * 1000.0 + (after.tv_usec-before.tv_usec) / 1000.0 ;
   fprintf(stdout,"Time spent with request '%s': %.3f ms\n",request,time_in_mill);
 
-  send(fd, response, strlen(response), 0);
+  send(fd, response, strlen(response) + 1 /* send \0 as well */, 0);
   free(request);
   free(response);
   return 1;
