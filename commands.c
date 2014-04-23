@@ -16,11 +16,11 @@
 #define CMD_SHOW_POI       "show"
 #define CMD_RATE           "rate"
 
-static char *cmd_list_all_poi(void);
-static char *cmd_show_poi(json_t *args);
-static char *cmd_rate_poi(json_t *args);
-static char *cmd_list_close_poi(client_t *client, json_t *args);
-static char *cmd_search_poi(client_t *client, json_t *args);
+static json_t *cmd_list_all_poi(void);
+static json_t *cmd_show_poi(json_t *args);
+static json_t *cmd_rate_poi(json_t *args);
+static json_t *cmd_list_close_poi(client_t *client, json_t *args);
+static json_t *cmd_search_poi(client_t *client, json_t *args);
 
 static int make_list_from_cols(void *userdata, int argc, char **argv, char **cols);
 static int make_object_from_cols(void *userdata, int argc, char **argv, char **cols);
@@ -30,12 +30,12 @@ char *
 process_commands(client_t *client, const char *request) {
     const char *command;
     json_t *args = NULL;
-    char *retval = NULL;
+    json_t *jretval = NULL;
     double latitude = 0, longitude = 0;
 
     json_t *jreq = json_loads(request, 0, NULL);
     if (!request) {
-        retval = strdup("bad request. 1");
+        jretval = json_string("bad request.");
         goto bad_request;
     }
 
@@ -44,34 +44,34 @@ process_commands(client_t *client, const char *request) {
             "latitude", &latitude, "longitude", &longitude,
             "command", &command, "args", &args);
     if (ok < 0) {
-        retval = strdup("bad request. 2");
+        jretval = json_string("bad request.");
         goto bad_request;
     }
 
     if (latitude || longitude) {
         if (!client_set_position(client, latitude, longitude)) {
-            retval = strdup("no coverage for your position.");
+            jretval = json_string("no coverage for your position.");
             goto bad_request;
         }
     }
 
     if (!client_get_position(client, &latitude, &longitude)) {
-        retval = strdup("client has no position.");
+        jretval = json_string("client has no position.");
         goto bad_request;
     }
 
     if (!strcmp(command, CMD_LIST_ALL_POI)) {
-        retval = cmd_list_all_poi();
+        jretval = cmd_list_all_poi();
     } else if (!strcmp(command, CMD_SHOW_POI)) {
-        retval = cmd_show_poi(args);
+        jretval = cmd_show_poi(args);
     } else if (!strcmp(command, CMD_RATE)) {
-        retval = cmd_rate_poi(args);
+        jretval = cmd_rate_poi(args);
     } else if (!strcmp(command, CMD_LIST_CLOSE_POI)) {
-        retval = cmd_list_close_poi(client, args);
+        jretval = cmd_list_close_poi(client, args);
     } else if (!strcmp(command, CMD_SEARCH_POI)) {
-        retval = cmd_search_poi(client, args);
+        jretval = cmd_search_poi(client, args);
     } else {
-        retval = strdup("invalid command");
+        jretval = json_string("invalid command.");
     }
 
 bad_request:
@@ -79,6 +79,10 @@ bad_request:
     // specifier doesn't incref
     if (jreq) json_decref(jreq);
 
+    assert(jretval);
+    jretval = json_pack("{s: o}", "response", jretval);
+    char *retval = json_dumps(jretval, JSON_INDENT(0) | JSON_COMPACT);
+    json_decref(jretval);
     return retval;
 }
 
@@ -94,14 +98,11 @@ make_list_from_cols(void *userdata, int argc, char **argv, char **cols) {
     return 0;
 }
 
-static char *
+static json_t *
 cmd_list_all_poi(void) {
     json_t *list = json_array();
     db_run("select name from places;", make_list_from_cols, list);
-
-    char *retval = json_dumps(list, JSON_INDENT(2));
-    json_decref(list);
-    return retval;
+    return list;
 }
 
 static int
@@ -117,30 +118,28 @@ make_object_from_cols(void *userdata, int argc, char **argv, char **cols) {
     return 0;
 }
 
-static char *
+static json_t *
 cmd_show_poi(json_t *args) {
     const char *poi;
     if (json_unpack(args, "[s]", &poi) < 0) {
-        return strdup("bad arguments.");
+        return json_string("bad arguments.");
     }
 
     json_t *object = json_object();
     db_run("select * from places where name = %Q",
             make_object_from_cols, object, poi);
 
-    char *retval = json_dumps(object, JSON_INDENT(2));
-    json_decref(object);
-    return retval;
+    return object;
 }
 
-static char *
+static json_t *
 cmd_rate_poi(json_t *args) {
     const char *poi;
     double rating;
     char *rating_str = NULL;
 
     if (json_unpack(args, "[s, f]", &poi, &rating) < 0) {
-        return strdup("bad arguments.");
+        return json_string("bad arguments.");
     }
 
     // the db expects rating to be a string, so normalize it now
@@ -166,14 +165,14 @@ make_array_of_object_from_cols(void *userdata, int argc, char **argv, char **col
     return 0;
 }
 
-static char *
+static json_t *
 cmd_list_close_poi(client_t *client, json_t *args) {
     json_t *array = json_array();
     double latitude, longitude;
     char *latitude_str, *longitude_str;
 
     if (!client_get_position(client, &latitude, &longitude)) {
-        return strdup("client has no position.");
+        return json_string("client has no position.");
     }
 
     asprintf(&latitude_str, "%.2f", latitude);
@@ -187,12 +186,10 @@ cmd_list_close_poi(client_t *client, json_t *args) {
     free(latitude_str);
     free(longitude_str);
 
-    char *retval = json_dumps(array, JSON_INDENT(2));
-    json_decref(array);
-    return retval;
+    return array;
 }
 
-static char *
+static json_t *
 cmd_search_poi(client_t *client, json_t *args) {
     json_t *array = json_array();
     double latitude, longitude;
@@ -200,11 +197,11 @@ cmd_search_poi(client_t *client, json_t *args) {
     const char *category;
 
     if (!client_get_position(client, &latitude, &longitude)) {
-        return strdup("client has no position.");
+        return json_string("client has no position.");
     }
 
     if (json_unpack(args, "[s]", &category) < 0) {
-        return strdup("bad arguments.");
+        return json_string("bad arguments.");
     }
 
     asprintf(&latitude_str, "%.2f", latitude);
@@ -219,7 +216,5 @@ cmd_search_poi(client_t *client, json_t *args) {
     free(latitude_str);
     free(longitude_str);
 
-    char *retval = json_dumps(array, JSON_INDENT(2));
-    json_decref(array);
-    return retval;
+    return array;
 }
