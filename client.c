@@ -63,9 +63,9 @@ read_args(const int argc, char * const argv[],
 static struct sockaddr_in
 build_address_structure(struct hostent *hp, const int port) {
   struct sockaddr_in sinaddr;
-  memset((char *)&sinaddr,0, sizeof(sinaddr));
+  bzero((char *)&sinaddr, sizeof(sinaddr));
   sinaddr.sin_family = AF_INET;
-  memcpy(hp->h_addr, (char *)&sinaddr.sin_addr, hp->h_length);
+  bcopy(hp->h_addr, (char *)&sinaddr.sin_addr, hp->h_length);
   sinaddr.sin_port = htons(port);
   return sinaddr;
 }
@@ -239,7 +239,7 @@ client_loop(int socket, struct sockaddr * servaddr, client_type_t type) {
     }
     outbuf = json_dumps(command,JSON_COMPACT);
     gettimeofday(&before, NULL);
-    sendto(socket,outbuf,strlen(outbuf)+1,0,servaddr,sizeof(servaddr));
+    sendto(socket,outbuf,strlen(outbuf)+1,0,servaddr,sizeof(*servaddr));
     n = recvfrom(socket,buf,sizeof(buf)-2,0,NULL,NULL);
     gettimeofday(&after, NULL); 
     buf[n] = '\0';
