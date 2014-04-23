@@ -74,7 +74,7 @@ tcp_server_loop(server_t *server) {
 
       server->on_accept(conn_fd, (struct sockaddr *) &peer);
       while ((rd = recv(conn_fd, buf, sizeof(buf), 0)) > 0) {
-        server->on_data(conn_fd, buf, rd);
+        if (server->on_data(conn_fd, buf, rd) == 0) break;
       }
       server->on_close(conn_fd, (struct sockaddr *) &peer);
 

@@ -12,7 +12,7 @@ typedef enum {
 } server_type_t;
 
 typedef void (*server_accept_callback_t)(int fd, const struct sockaddr *peer);
-typedef void (*server_data_callback_t)(int fd, const char *data, size_t len);
+typedef int (*server_data_callback_t)(int fd, const char *data, size_t len);
 typedef void (*server_close_callback_t)(int fd, const struct sockaddr *peer);
 
 server_t *server_new(server_type_t type, int port);

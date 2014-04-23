@@ -9,17 +9,45 @@
 #include "client_class.h"
 #include "commands.h"
 
+#define REQUEST_BUFFER_SIZE 1024
+
 static client_t *client;
+static char *rbuf;
+static unsigned int rbufsize;
+static char request_buffer[REQUEST_BUFFER_SIZE];
 
 static void
 on_client_accepted(int fd, const struct sockaddr *peer) {
   db_init();
   client = client_new();
+
+  memset(request_buffer, '\0', REQUEST_BUFFER_SIZE);
+  rbuf = request_buffer;
+  rbufsize = REQUEST_BUFFER_SIZE;
 }
 
-static void
+static int
 on_incoming_data(int fd, const char *data, size_t len) {
-  char *request = strndup(data, len);
+  size_t to_copy = (len > rbufsize) ? rbufsize : len;
+  memcpy(rbuf, data, to_copy);
+  rbuf += to_copy;
+  rbufsize -= to_copy;
+
+  const char *request_end;
+  for (request_end = request_buffer; request_end < rbuf; request_end++) {
+      if (*request_end == '\0') break;
+  }
+
+  if (*request_end != '\0') {
+    // drop the connection if we filled the buffer but
+    // haven't seen a request, and keep going otherwise.
+    return rbufsize > 0;
+  }
+
+  char *request = strndup(request_buffer, request_end - request_buffer);
+  rbuf = request_buffer;
+  rbufsize = REQUEST_BUFFER_SIZE;
+
   struct timeval  before;
   struct timeval  after;
   gettimeofday(&before, NULL);
@@ -33,6 +61,7 @@ on_incoming_data(int fd, const char *data, size_t len) {
   send(fd, response, strlen(response), 0);
   free(request);
   free(response);
+  return 1;
 }
 
 static void
