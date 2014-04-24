@@ -35,7 +35,7 @@ lib/jansson-2.6/.built:
 	touch $@
 
 clean:
-	rm *.o server client places.sqlite3
+	rm -f *.o server client places.sqlite3
 
 .PHONY: test_tcp
 test_tcp: client speed_test.txt
