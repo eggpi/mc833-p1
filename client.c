@@ -63,9 +63,9 @@ read_args(const int argc, char * const argv[],
 static struct sockaddr_in
 build_address_structure(struct hostent *hp, const int port) {
   struct sockaddr_in sinaddr;
-  bzero((char *)&sinaddr, sizeof(sinaddr));
+  memset((char *)&sinaddr,0, sizeof(sinaddr));
   sinaddr.sin_family = AF_INET;
-  bcopy(hp->h_addr, (char *)&sinaddr.sin_addr, hp->h_length);
+  memcpy(hp->h_addr, (char *)&sinaddr.sin_addr, hp->h_length);
   sinaddr.sin_port = htons(port);
   return sinaddr;
 }
