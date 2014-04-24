@@ -217,7 +217,6 @@ client_loop(int socket, struct sockaddr * servaddr, client_type_t type) {
   char* outbuf;
   char option = 'X';
   json_t* command;
-  int n;
   struct timeval  before;
   struct timeval  after;
 
@@ -240,13 +239,28 @@ client_loop(int socket, struct sockaddr * servaddr, client_type_t type) {
     outbuf = json_dumps(command,JSON_COMPACT);
     gettimeofday(&before, NULL);
     sendto(socket,outbuf,strlen(outbuf)+1,0,servaddr,sizeof(*servaddr));
-    n = recvfrom(socket,buf,sizeof(buf)-2,0,NULL,NULL);
-    gettimeofday(&after, NULL); 
-    buf[n] = '\0';
-    fprintf(stdout, "%s", buf);
+
+    int n;
+    char *bufstart = buf;
+    int total_read = 0;
+    while ((n = recvfrom(socket,bufstart,sizeof(buf)-2-total_read,0,NULL,NULL)) > 0) {
+        if (bufstart[n-1] == '\0') break;
+        bufstart += n;
+        total_read += n;
+    }
+
+    json_t *janswer = json_loads(buf, 0, NULL);
+    json_t *jresponse = json_object_get(janswer,"response");
+    char * response = json_dumps(jresponse,JSON_INDENT(2));
+
+    gettimeofday(&after, NULL);
+    fprintf(stdout, "%s", response);
     fprintf(stdout,"\nApproximated time elapsed since request: %.3f ms\n",time_difference(after,before));
     free(outbuf);
+    free(response);
     json_decref(command);
+    json_decref(janswer);
+    json_decref(jresponse);
   }
 }
 
