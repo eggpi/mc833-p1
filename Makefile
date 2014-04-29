@@ -1,5 +1,5 @@
 CFLAGS = -O0 -g -Wall -Werror -pedantic -std=c99 -D_GNU_SOURCE -D_XOPEN_SOURCE=800 -D_DARWIN_C_SOURCE
-IP = localhost
+IP = 127.0.0.1
 PORT = 8989
 NOW := $(shell date +"%s")
 

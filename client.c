@@ -253,11 +253,11 @@ client_loop(int socket, struct sockaddr * servaddr, client_type_t type) {
     gettimeofday(&after, NULL);
     fprintf(stdout, "%s", response);
     fprintf(stdout,"\nApproximated time elapsed since request: %.3f ms\n",time_difference(after,before));
+    json_decref(command);
+    json_decref(jresponse);
+    json_decref(janswer);
     free(outbuf);
     free(response);
-    json_decref(command);
-    json_decref(janswer);
-    json_decref(jresponse);
   }
 }
 
