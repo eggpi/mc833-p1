@@ -7,6 +7,7 @@
 #include <jansson.h>
 #include <stdbool.h>
 #include <sys/time.h>
+#include <arpa/inet.h>
 
 #define CMD_LIST_ALL_POI   "apoi"
 #define CMD_LIST_CLOSE_POI "cpoi"
@@ -33,16 +34,12 @@ time_difference(struct timeval  after, struct timeval  before) {
 
 static void
 read_args(const int argc, char * const argv[],
-    struct hostent** ip, int* port, client_type_t* type) {
+    in_addr_t* ip, int* port, client_type_t* type) {
   if (argc > 1) {
-    *ip = gethostbyname(argv[1]);
+    *ip = inet_addr(argv[1]);
   }
   else {
-    *ip = gethostbyname("localhost");
-  }
-  if (!*ip) {
-    fprintf(stderr, "client: unknown host: %s\n", argv[1]);
-    exit(1);
+    *ip = inet_addr("127.0.0.1");
   }
 
   if (argc > 2) {
@@ -61,11 +58,11 @@ read_args(const int argc, char * const argv[],
 }
 
 static struct sockaddr_in
-build_address_structure(struct hostent *hp, const int port) {
+build_address_structure(in_addr_t hp, const int port) {
   struct sockaddr_in sinaddr;
   memset((char *)&sinaddr,0, sizeof(sinaddr));
   sinaddr.sin_family = AF_INET;
-  memcpy(hp->h_addr, (char *)&sinaddr.sin_addr, hp->h_length);
+  sinaddr.sin_addr.s_addr = hp;
   sinaddr.sin_port = htons(port);
   return sinaddr;
 }
@@ -268,7 +265,7 @@ int
 main(int argc, char* argv[]) {
   client_type_t server_type;
   int port, s;
-  struct hostent* host;
+  in_addr_t host;
   struct sockaddr_in sin;
   first_command = true;
 
