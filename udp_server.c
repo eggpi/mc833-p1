@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "server_internal.h"
 
@@ -38,9 +39,12 @@ udp_server_loop(server_t *server) {
         rd = recvfrom(server->listen_fd, buf, server->bufsiz, 0,
                       (struct sockaddr *) &peer, &peer_len);
         connect(server->listen_fd, (struct sockaddr *) &peer, peer_len);
-
         server->on_accept(server->listen_fd, (struct sockaddr *) &peer);
         server->on_data(server->listen_fd, buf, rd);
         server->on_close(server->listen_fd, (struct sockaddr *) &peer);
+
+        memset(&peer, 0, sizeof(peer));
+        peer.sin_family = AF_UNSPEC;
+        connect(server->listen_fd, (struct sockaddr *) &peer, peer_len);
     }
 }
